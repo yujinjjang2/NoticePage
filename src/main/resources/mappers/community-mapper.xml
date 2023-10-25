@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="communityMapper">
+
+	<resultMap type="Community" id="community_rm">
+		<id property="communityNo" column="COMMUNITY_NO"/>
+		<result property="memberNo" column="MEMBER_NO"/>
+		<result property="communityTitle" column="COMMUNITY_TITLE"/>
+		<result property="communityContent" column="COMMUNITY_CONTENT"/>
+		<result property="createDt" column="CREATE_DT"/>
+		<result property="readCount" column="READ_COUNT"/>
+		<result property="communityDelFl" column="COMMUNITY_DEL_FL"/>
+		<result property="profileImg" column="PROFILE_IMG"/>
+		<result property="nickName" column="NICKNAME"/>
+	</resultMap>
+	
+	<select id="selectCommunityList" resultMap="community_rm">
+		SELECT COMMUNITY_NO, MEMBER_NO, COMMUNITY_TITLE, COMMUNITY_CONTENT, READ_COUNT, COMMUNITY_DEL_FL, PROFILE_IMG,
+		TO_CHAR(CREATE_DT, 'YYYY. MM. DD') CREATE_DT, NICKNAME
+		FROM COMMUNITY
+		JOIN "MEMBER" USING(MEMBER_NO)
+		ORDER BY CREATE_DT
+	</select>
+	
+</mapper>

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="noticeMapper">
+
+	<!-- 
+		resultMap 
+		- SELECT 조회 결과(ResultSet) 
+		컬럼명과 컬럼 값을 옮겨 담을 DTO의 필드명이 같지 않을 때 이를 매핑 시켜 SELECT시 자동으로 담기게하는 역할 
+		
+		-속성 
+		type : 연결할 DTO (패키지명 + 클래스명 또는 별칭) 
+		id : 만들어진 resultMap을 지칭할 식별명(이름) 
+		<id> 태그 : PK 역할 컬럼 - 필드 매핑 
+		<result> 태그 : <id>제외 나머지 
+		
+	-->
+		
+	<resultMap type="Notice" id="notice_rm">
+
+		<!-- DB의 기본 키(복합키면 여러 개 작성) -->
+		<id property="noticeNo" column="NOTICE_NO" />
+
+		<!-- DB의 일반 컬럼들 -->
+		<result property="noticeTitle" column="NOTICE_TITLE" />
+		<result property="noticeDetail" column="NOTICE_DETAIL" />
+		<result property="noticeUploadDate" column="NOTICE_UPLOAD_DATE" />
+		<result property="noticeDelFl" column="NOTICE_DEL_FL" />
+		
+		<result property="preNoticeNo" column="PRE_NOTICE_NO" />
+		<result property="preNoticeTitle" column="PRE_NOTICE_TITLE" />
+		<result property="nextNoticeNo" column="NEXT_NOTICE_NO" />
+		<result property="nextNoticeTitle" column="NEXT_NOTICE_TITLE" />
+		
+	</resultMap>
+
+	<!-- noticeList 조회 -->
+	<select id="selectNoticeList" resultMap="notice_rm">
+		SELECT NOTICE_NO, NOTICE_TITLE, NOTICE_DETAIL, TO_CHAR(NOTICE_UPLOAD_DATE, 'YYYY. MM. DD') NOTICE_UPLOAD_DATE, NOTICE_DEL_FL
+		FROM NOTICE_BOARD
+		WHERE NOTICE_DEL_FL = 'N'
+		ORDER BY NOTICE_NO DESC
+	</select>
+	
+	<!-- 특정 게시판의 삭제되지 않은 게시글 수 조회 -->
+	<select id="getListCount" resultType="_int">
+		SELECT COUNT(*) FROM NOTICE_BOARD
+		WHERE NOTICE_DEL_FL = 'N'
+	</select>
+	
+	<!-- noticeDetail 조회 -->
+	<select id="selectNoticeDetail" resultMap="notice_rm">
+		SELECT 
+			A.NOTICE_NO, A.NOTICE_TITLE, A.NOTICE_DETAIL, A.NOTICE_UPLOAD_DATE, A.NOTICE_DEL_FL, A.PRE_NOTICE_NO, A.PRE_NOTICE_TITLE, A.NEXT_NOTICE_NO, A.NEXT_NOTICE_TITLE
+		FROM 
+			(
+				SELECT 
+					NOTICE_NO, NOTICE_TITLE, NOTICE_DETAIL, TO_CHAR(NOTICE_UPLOAD_DATE, 'YYYY. MM. DD') NOTICE_UPLOAD_DATE, NOTICE_DEL_FL
+					, LAG(NOTICE_NO) OVER (ORDER BY NOTICE_NO) PRE_NOTICE_NO
+					, LAG(NOTICE_TITLE) OVER (ORDER BY NOTICE_NO) PRE_NOTICE_TITLE
+					, LEAD(NOTICE_NO) OVER (ORDER BY NOTICE_NO) NEXT_NOTICE_NO
+					, LEAD(NOTICE_TITLE) OVER (ORDER BY NOTICE_NO) NEXT_NOTICE_TITLE
+				FROM NOTICE_BOARD
+				WHERE NOTICE_DEL_FL = 'N'
+				ORDER BY NOTICE_NO
+			) A
+		WHERE A.NOTICE_NO = #{noticeNo}
+	</select>
+	
+	<!-- 공지사항 ISNERT -->
+	<insert id="insertNotice">
+		INSERT INTO NOTICE_BOARD VALUES(SEQ_NOTICE_NO.NEXTVAL, #{noticeTitle}, #{noticeDetail}, DEFAULT, DEFAULT)
+	</insert>
+	
+	<!-- 공지사항 UPDATE -->
+	<update id="updateNotice">
+		UPDATE NOTICE_BOARD SET 
+		NOTICE_TITLE = #{noticeTitle},
+		NOTICE_DETAIL = #{noticeDetail},
+		NOTICE_UPLOAD_DATE = DEFAULT
+		WHERE NOTICE_NO = #{noticeNo}
+	</update>
+	
+	<!-- 공지사항 DELETE -->
+	<update id="deleteNotice">
+		UPDATE NOTICE_BOARD SET 
+		NOTICE_DEL_FL = 'Y'
+		WHERE NOTICE_NO = #{noticeNo}
+	</update>
+
+</mapper>
